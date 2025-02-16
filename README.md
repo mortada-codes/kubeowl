@@ -1,16 +1,26 @@
-# kubeowl
-// TODO(user): Add simple overview of use/purpose
+# KubeOwl 🦉
+
+KubeOwl is a Kubernetes operator that seamlessly synchronizes environment variables between GitHub Actions and Kubernetes clusters, making secrets and configuration management effortless.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+
+Managing environment variables and secrets across GitHub Actions and Kubernetes clusters can be challenging and error-prone. KubeOwl solves this by providing:
+
+- 🔄 Automatic synchronization of environment variables from GitHub Actions to Kubernetes
+- 🔐 Secure handling of sensitive data and secrets
+- 📦 Support for multiple deployment environments (dev, staging, prod)
+- 🎯 Selective synchronization based on namespaces and labels
+- 🔍 Audit logging of all synchronization events
 
 ## Getting Started
 
 ### Prerequisites
 - go version v1.23.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- docker version 17.03+
+- kubectl version v1.11.3+
+- Access to a Kubernetes v1.11.3+ cluster
+- GitHub repository with Actions enabled
+- GitHub Personal Access Token with appropriate permissions
 
 ### To Deploy on the cluster
 **Build and push your image to the location specified by `IMG`:**
@@ -38,39 +48,85 @@ make deploy IMG=<some-registry>/kubeowl:tag
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges or be logged in as admin.
 
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
+### Configure and Deploy
 
-```sh
-kubectl apply -k config/samples/
+1. Create a KubeOwl Configuration:
+
+```yaml
+apiVersion: sync.kubeowl.io/v1alpha1
+kind: EnvSync
+metadata:
+  name: my-app-sync
+spec:
+  source:
+    github:
+      repository: owner/repo
+      environment: production
+  target:
+    namespace: my-namespace
+    secretName: my-app-secrets
 ```
 
->**NOTE**: Ensure that the samples has default values to test it out.
+2. Configure GitHub Actions:
+
+```yaml
+name: Sync Environment Variables
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  sync-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure KubeOwl
+        uses: kubeowl/action@v1
+        with:
+          cluster-url: ${{ secrets.CLUSTER_URL }}
+          token: ${{ secrets.KUBEOWL_TOKEN }}
+          namespace: my-namespace
+```
+
+3. Monitor Synchronization:
+
+```sh
+kubectl get envsyncs
+kubectl describe envsync my-app-sync
+```
 
 ### To Uninstall
-**Delete the instances (CRs) from the cluster:**
 
+1. Remove EnvSync resources:
 ```sh
-kubectl delete -k config/samples/
+kubectl delete envsyncs --all
 ```
 
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
-make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
+2. Uninstall KubeOwl:
 ```sh
 make undeploy
 ```
 
-## Project Distribution
+## Contributing
 
-Following the options to release and provide this solution to the users.
+We welcome contributions to KubeOwl! Here's how you can help:
 
-### By providing a bundle with all YAML files
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your PR adheres to:
+- Kubernetes coding conventions
+- Secure handling of sensitive data
+- Comprehensive test coverage
+- Clear documentation updates
+
+**NOTE:** Run `make help` for more information on all potential `make` targets
+
+More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 1. Build the installer for the image built and published in the registry:
 
@@ -111,7 +167,19 @@ previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml
 is manually re-applied afterwards.
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
+
+We welcome contributions to KubeOwl! Here's how you can help:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your PR adheres to:
+- Kubernetes coding conventions
+- Includes appropriate tests
+- Updates documentation as needed
 
 **NOTE:** Run `make help` for more information on all potential `make` targets
 
